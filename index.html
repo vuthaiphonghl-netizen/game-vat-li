@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHINH PHỤC VẬT LÍ 10</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #3b82f6;
+            --accent: #10b981;
+            --error: #ef4444;
+            --bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+        }
+
+        #game-box {
+            background: white;
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Progress Bar */
+        .timer-container {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        #timer-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--accent));
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        /* UI Elements */
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--secondary);
+        }
+
+        .question-text {
+            font-size: 1.4rem;
+            margin: 20px 0;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .opt-btn {
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            font-size: 1.1rem;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) {
+            border-color: var(--secondary);
+            background: #eff6ff;
+        }
+
+        .correct { background: var(--accent) !important; color: white; border-color: var(--accent); }
+        .wrong { background: var(--error) !important; color: white; border-color: var(--error); }
+
+        #explanation {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .btn-main {
+            background: var(--secondary);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Animation */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pop-effect { animation: pop 0.3s ease-out; }
+    </style>
+</head>
+<body>
+
+<div id="game-box">
+    <div id="start-screen">
+        <h1 style="color: var(--secondary); font-size: 2.5rem;">⚛️ VẬT LÍ 10</h1>
+        <p>Thử thách kiến thức Động học & Động lực học</p>
+        <div style="margin: 30px 0;">
+            <p>⏱ 20 giây mỗi câu</p>
+            <p>🏆 Có bảng xếp hạng cá nhân</p>
+        </div>
+        <button class="btn-main" onclick="startGame()">BẮT ĐẦU NGAY</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div class="stats">
+            <span id="q-count">Câu 1/10</span>
+            <span id="score-display">Điểm: 0</span>
+        </div>
+        <div class="timer-container">
+            <div id="timer-bar"></div>
+        </div>
+        <div class="question-text" id="q-text">Đang tải câu hỏi...</div>
+        <div class="options-grid" id="options-box"></div>
+        <div id="explanation"></div>
+    </div>
+
+    <div id="end-screen" class="hidden">
+        <h2 id="rank-title">KẾT QUẢ</h2>
+        <div style="font-size: 4rem; margin: 20px 0;" id="final-score">0</div>
+        <div id="high-score-list" style="text-align: left; margin: 20px 0; padding: 15px; background: #f1f5f9; border-radius: 10px;">
+            <strong>Top 3 điểm cao của bạn:</strong>
+            <ol id="history-list"></ol>
+        </div>
+        <button class="btn-main" onclick="location.reload()">CHƠI LẠI</button>
+    </div>
+</div>
+
+<script>
+    // ===== CƠ SỞ DỮ LIỆU CÂU HỎI VẬT LÍ 10 =====
+    const physicsQuiz = [
+        {
+            q: "Đại lượng nào sau đây là đại lượng vectơ?",
+            options: ["Quãng đường", "Tốc độ", "Độ dịch chuyển", "Thời gian"],
+            correct: 2,
+            exp: "Độ dịch chuyển bao gồm cả độ lớn và hướng, nên nó là đại lượng vectơ."
+        },
+        {
+            q: "Trong chuyển động thẳng biến đổi đều, gia tốc là đại lượng:",
+            options: ["Luôn bằng 0", "Thay đổi theo thời gian", "Không đổi theo thời gian", "Luôn dương"],
+            correct: 2,
+            exp: "Định nghĩa: Chuyển động thẳng biến đổi đều có gia tốc không đổi (a = const)."
+        },
+        {
+            q: "Một vật rơi tự do từ độ cao h. Công thức tính vận tốc v khi chạm đất là:",
+            options: ["v = gh", "v = 2gh", "v = √(gh)", "v = √(2gh)"],
+            correct: 3,
+            exp: "Áp dụng công thức liên hệ: v² = 2gh => v = √(2gh)."
+        },
+        {
+            q: "Định luật II Newton được biểu diễn bằng biểu thức:",
+            options: ["F = m/a", "F = m.a", "a = F.m", "m = F.a"],
+            correct: 1,
+            exp: "Định luật II Newton: Gia tốc tỉ lệ thuận với lực tác dụng và tỉ lệ nghịch với khối lượng: F = ma."
+        },
+        {
+            q: "Khi một con ngựa kéo xe, lực làm con ngựa chuyển động về phía trước là:",
+            options: ["Lực ngựa kéo xe", "Lực xe kéo ngựa", "Lực ngựa đạp vào mặt đất", "Phản lực từ mặt đất tác dụng vào chân ngựa"],
+            correct: 3,
+            exp: "Theo định luật III Newton, khi chân ngựa đẩy đất về sau, đất đẩy chân ngựa về trước."
+        }
+    ];
+
+    let currentQ = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = 20;
+    const timeLimit = 20;
+
+    function startGame() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentQ >= physicsQuiz.length) return showEnd();
+
+        const data = physicsQuiz[currentQ];
+        document.getElementById('q-count').innerText = `Câu ${currentQ + 1}/${physicsQuiz.length}`;
+        document.getElementById('q-text').innerText = data.q;
+        document.getElementById('explanation').classList.add('hidden');
+        
+        const box = document.getElementById('options-box');
+        box.innerHTML = '';
+        
+        data.options.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerText = opt;
+            btn.onclick = () => checkAns(i);
+            box.appendChild(btn);
+        });
+
+        startTimer();
+    }
+
+    function startTimer() {
+        timeLeft = timeLimit;
+        clearInterval(timer);
+        document.getElementById('timer-bar').style.width = '100%';
+        
+        timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer-bar').style.width = (timeLeft / timeLimit * 100) + '%';
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                checkAns(-1);
+            }
+        }, 1000);
+    }
+
+    function checkAns(choice) {
+        clearInterval(timer);
+        const data = physicsQuiz[currentQ];
+        const btns = document.getElementsByClassName('opt-btn');
+        
+        for (let btn of btns) btn.disabled = true;
+
+        if (choice === data.correct) {
+            btns[choice].classList.add('correct');
+            score += Math.round(10 + timeLeft/2); // Thưởng thêm điểm nếu trả lời nhanh
+            document.getElementById('score-display').innerText = `Điểm: ${score}`;
+        } else {
+            if (choice !== -1) btns[choice].classList.add('wrong');
+            btns[data.correct].classList.add('correct');
+            const exp = document.getElementById('explanation');
+            exp.innerText = "💡 " + data.exp;
+            exp.classList.remove('hidden');
+        }
+
+        setTimeout(() => {
+            currentQ++;
+            loadQuestion();
+        }, 3500); // Chờ 3.5s để học sinh đọc giải thích
+    }
+
+    function showEnd() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        const end = document.getElementById('end-screen');
+        end.classList.remove('hidden');
+        document.getElementById('final-score').innerText = score;
+
+        // Lưu và hiển thị lịch sử
+        let history = JSON.parse(localStorage.getItem('physics_scores') || "[]");
+        history.push(score);
+        history.sort((a, b) => b - a);
+        history = history.slice(0, 3);
+        localStorage.setItem('physics_scores', JSON.stringify(history));
+
+        const list = document.getElementById('history-list');
+        list.innerHTML = history.map(s => `<li>${s} điểm</li>`).join('');
+
+        if(score >= 40) document.getElementById('rank-title').innerText = "XUẤT SẮC! 🏆";
+        else if(score >= 20) document.getElementById('rank-title').innerText = "LÀM TỐT! 🎉";
+        else document.getElementById('rank-title').innerText = "CỐ GẮNG HƠN NHÉ! 💪";
+    }
+</script>
+</body>
+</html>
